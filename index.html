@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClickerMarket - Currency Clicker Game</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <!-- Civilization Selection Screen -->
+    <div id="civilization-screen" class="screen">
+        <div class="civilization-container">
+            <h1>Choose Your Civilization</h1>
+            <p class="subtitle">Select your currency type. You'll be locked to this choice until you rebirth!</p>
+            <div class="auth-section">
+                <div class="auth-status" id="auth-status">
+                    <div id="not-signed-in">
+                        <p class="auth-message">Sign in with Google to save your progress across devices!</p>
+                        <a href="/auth/google" class="google-sign-in-btn">
+                            <svg width="18" height="18" viewBox="0 0 18 18">
+                                <path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/>
+                                <path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z"/>
+                                <path fill="#FBBC05" d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.348 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z"/>
+                                <path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z"/>
+                            </svg>
+                            Sign in with Google
+                        </a>
+                    </div>
+                    <div id="signed-in" class="hidden">
+                        <div class="user-info">
+                            <img id="user-picture" src="" alt="Profile" class="user-avatar">
+                            <div class="user-details">
+                                <span id="user-name" class="user-name"></span>
+                                <span id="user-email" class="user-email"></span>
+                            </div>
+                        </div>
+                        <a href="/auth/logout" class="logout-btn">Sign Out</a>
+                    </div>
+                </div>
+            </div>
+            <div class="player-name-input">
+                <label for="player-name">Your Player Name (for marketplace):</label>
+                <input type="text" id="player-name" placeholder="Enter your name" maxlength="20" value="">
+            </div>
+            <div class="connection-status" id="connection-status">
+                <span class="status-dot"></span>
+                <span id="status-text">Connecting to server...</span>
+            </div>
+            <div class="civilization-options">
+                <div class="civilization-card" data-civilization="red">
+                    <div class="currency-icon red-circle"></div>
+                    <h2>Red Circle</h2>
+                    <p>The passionate civilization of circles</p>
+                </div>
+                <div class="civilization-card" data-civilization="blue">
+                    <div class="currency-icon blue-square"></div>
+                    <h2>Blue Square</h2>
+                    <p>The stable civilization of squares</p>
+                </div>
+                <div class="civilization-card" data-civilization="yellow">
+                    <div class="currency-icon yellow-triangle"></div>
+                    <h2>Yellow Triangle</h2>
+                    <p>The dynamic civilization of triangles</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Screen -->
+    <div id="game-screen" class="screen hidden">
+        <header>
+            <h1>ClickerMarket</h1>
+            <div class="header-info">
+                <span id="civilization-name"></span>
+                <span id="rebirth-count">Rebirths: 0</span>
+                <span id="player-display-name"></span>
+                <div class="save-status" id="save-status">
+                    <span id="save-indicator" class="save-indicator">●</span>
+                    <span id="save-text">Saving...</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="game-container">
+            <!-- Main Currency Display -->
+            <div class="currency-section">
+                <div class="currency-display">
+                    <div id="currency-icon" class="currency-icon-large"></div>
+                    <h2 id="currency-name">Currency</h2>
+                    <div class="currency-amount" id="currency-amount">0</div>
+                    <div class="currency-per-second" id="currency-per-second">0/sec</div>
+                    <div class="item-bonuses" id="item-bonuses" style="display: none;">
+                        <div class="bonus-item">Click Power: <span id="click-bonus">+0%</span></div>
+                        <div class="bonus-item">Production: <span id="production-bonus">+0%</span></div>
+                    </div>
+                </div>
+                <button id="click-button" class="click-button">
+                    <div id="click-icon" class="click-icon"></div>
+                    <span>Click!</span>
+                </button>
+            </div>
+
+            <!-- Stats and Upgrades -->
+            <div class="content-grid">
+                <div class="upgrades-panel">
+                    <h3>Upgrades</h3>
+                    <div id="upgrades-list" class="upgrades-list"></div>
+                </div>
+
+                <div class="buildings-panel">
+                    <h3>Buildings</h3>
+                    <div id="buildings-list" class="buildings-list"></div>
+                </div>
+            </div>
+
+            <!-- Rebirth Section -->
+            <div class="rebirth-section">
+                <h3>Rebirth</h3>
+                <p>Spend 1 Trillion to rebirth and unlock the marketplace!</p>
+                <div class="rebirth-info">
+                    <span>Cost: <span id="rebirth-cost">1,000,000,000,000</span></span>
+                    <button id="rebirth-button" class="rebirth-button" disabled>Rebirth</button>
+                </div>
+            </div>
+
+            <!-- Marketplace (hidden until rebirth) -->
+            <div id="marketplace-section" class="marketplace-section hidden">
+                <div class="marketplace-header">
+                    <div>
+                        <h3>Online Marketplace</h3>
+                        <p class="marketplace-subtitle">Trade rare digital items with players worldwide! Items provide powerful benefits.</p>
+                    </div>
+                    <div class="online-indicator">
+                        <span class="online-dot"></span>
+                        <span id="online-players">1,234 players online</span>
+                    </div>
+                </div>
+                <div class="marketplace-tabs">
+                    <button class="tab-button active" data-tab="browse">Browse Market</button>
+                    <button class="tab-button" data-tab="listings">My Listings <span id="listing-count" class="badge">0/5</span></button>
+                    <button class="tab-button" data-tab="inventory">My Inventory</button>
+                    <button class="tab-button" data-tab="equipped">Equipped Items</button>
+                </div>
+                <div id="marketplace-content" class="marketplace-content">
+                    <!-- Marketplace content will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
